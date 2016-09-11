@@ -42,17 +42,6 @@ func Execute(p ExecuteParams) (result *Result) {
 		return
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			var err error
-			if r, ok := r.(error); ok {
-				err = gqlerrors.FormatError(r)
-			}
-			exeContext.Errors = append(exeContext.Errors, gqlerrors.FormatError(err))
-			result.Errors = exeContext.Errors
-		}
-	}()
-
 	return executeOperation(ExecuteOperationParams{
 		ExecutionContext: exeContext,
 		Root:             p.Root,
@@ -478,29 +467,6 @@ type resolveFieldResultState struct {
 func resolveField(eCtx *ExecutionContext, parentType *Object, source interface{}, fieldASTs []*ast.Field) (result interface{}, resultState resolveFieldResultState) {
 	// catch panic from resolveFn
 	var returnType Output
-	defer func() (interface{}, resolveFieldResultState) {
-		if r := recover(); r != nil {
-
-			var err error
-			if r, ok := r.(string); ok {
-				err = NewLocatedError(
-					fmt.Sprintf("%v", r),
-					FieldASTsToNodeASTs(fieldASTs),
-				)
-			}
-			if r, ok := r.(error); ok {
-				err = gqlerrors.FormatError(r)
-			}
-			// send panic upstream
-			if _, ok := returnType.(*NonNull); ok {
-				panic(gqlerrors.FormatError(err))
-			}
-			eCtx.Errors = append(eCtx.Errors, gqlerrors.FormatError(err))
-			return result, resultState
-		}
-		return result, resultState
-	}()
-
 	fieldAST := fieldASTs[0]
 	fieldName := ""
 	if fieldAST.Name != nil {
