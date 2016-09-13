@@ -2,4 +2,4 @@ include_rules
 : |> !go |> bin/flynn-blobstore
 : |> !go ./cmd/flynn-blobstore-migrate |> bin/flynn-blobstore-migrate
 : |> !go ./cmd/flynn-blobstore-cleanup |> bin/flynn-blobstore-cleanup
-: bin/* |> !docker-bootstrapped |>
+: bin/* |> !image-bootstrapped |>
