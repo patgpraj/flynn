@@ -87,13 +87,6 @@ func (d *DeployJob) deployOneByOneWithWaitFn(waitJobs WaitJobsFn) error {
 				olog.Error("error scaling old formation down by one", "type", typ, "err", err)
 				return err
 			}
-			for i := 0; i < diff; i++ {
-				d.deployEvents <- ct.DeploymentEvent{
-					ReleaseID: d.OldReleaseID,
-					JobState:  ct.JobStateStopping,
-					JobType:   typ,
-				}
-			}
 
 			olog.Info(fmt.Sprintf("waiting for %d job down event(s)", diff), "type", typ)
 			if err := waitJobs(d.OldReleaseID, ct.JobEvents{typ: ct.JobDownEvents(diff)}, olog); err != nil {

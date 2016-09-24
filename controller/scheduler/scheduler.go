@@ -1512,6 +1512,7 @@ func (s *Scheduler) stopJob(job *Job) error {
 	// still trying to start the job, in which case it will get an
 	// ErrJobNotPending error on the next call to PlaceJob
 	job.State = JobStateStopping
+	s.persistJob(job)
 
 	log.Info("requesting host to stop job", "host.id", job.HostID)
 	// call host.StopJob in a goroutine so it doesn't block the main

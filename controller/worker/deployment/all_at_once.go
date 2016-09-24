@@ -52,15 +52,7 @@ func (d *DeployJob) deployAllAtOnce() error {
 
 	expected = make(ct.JobEvents)
 	for typ := range d.Processes {
-		existing := d.oldReleaseState[typ]
-		for i := 0; i < existing; i++ {
-			d.deployEvents <- ct.DeploymentEvent{
-				ReleaseID: d.OldReleaseID,
-				JobState:  ct.JobStateStopping,
-				JobType:   typ,
-			}
-		}
-		if existing > 0 {
+		if existing := d.oldReleaseState[typ]; existing > 0 {
 			expected[typ] = ct.JobDownEvents(existing)
 		}
 	}
