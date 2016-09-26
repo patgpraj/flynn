@@ -1,4 +1,4 @@
-package main
+package postgresql
 
 // All allowed Postgres tunables and whether they require a restart or not
 var allowedTunables = map[string]bool{
