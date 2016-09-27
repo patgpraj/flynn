@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
+	ct "github.com/flynn/flynn/controller/types"
 	c "github.com/flynn/go-check"
 )
 
@@ -52,4 +57,38 @@ func (s *GitreceiveSuite) TestSlugbuilderLimit(t *c.C) {
 	t.Assert(push, OutputContains, "524288000")
 
 	t.Assert(r.flynn("-a", "gitreceive", "env", "unset", "SLUGBUILDER_DEFAULT_MEMORY_LIMIT"), Succeeds)
+}
+
+func (s *GitreceiveSuite) TestDeployWithEnv(t *c.C) {
+	client := s.controllerClient(t)
+	app := &ct.App{}
+	t.Assert(client.CreateApp(app), c.IsNil)
+	debugf(t, "created app %s (%s)", app.Name, app.ID)
+
+	dir := filepath.Join("apps", "env-dir")
+	sh := func(command string) *CmdResult {
+		cmd := exec.Command("sh", "-c", command)
+		cmd.Dir = dir
+		return run(t, cmd)
+	}
+
+	env := map[string]string{
+		"FOO":           "BAR",
+		"BUILDPACK_URL": "git@github.com:kr/heroku-buildpack-inline.git",
+	}
+	args := []string{"flynn", "-a", "gitreceive", "run", "/bin/flynn-receiver", app.Name, "test-rev"}
+	for k, v := range env {
+		args = append(args, "--env")
+		args = append(args, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	commandStr := fmt.Sprintf("tar --create . | %s", strings.Join(args, " "))
+	result := sh(commandStr)
+	debugf(t, "%s:\n%s", commandStr, result.Output)
+	if result.Err != nil {
+		debugf(t, "error: %s", result.Err)
+	}
+	t.Assert(result, Succeeds)
+	t.Assert(result, OutputContains, "BAR")
+	t.Assert(result.Err, c.IsNil)
 }
